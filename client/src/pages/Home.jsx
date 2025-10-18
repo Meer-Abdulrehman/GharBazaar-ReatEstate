@@ -26,9 +26,9 @@ export default function Home() {
         setLoading(true);
         setError(null);
 
-        const offerRes = fetch('http://localhost:3000/api/listing/get?offer=true&limit=4');
-        const rentRes = fetch('http://localhost:3000/api/listing/get?type=rent&limit=4');
-        const saleRes = fetch('http://localhost:3000/api/listing/get?type=sale&limit=4');
+        const offerRes = fetch('https://reat-estate-backend.vercel.app/api/listing/get?offer=true&limit=4');
+        const rentRes = fetch('https://reat-estate-backend.vercel.app/api/listing/get?type=rent&limit=4');
+        const saleRes = fetch('https://reat-estate-backend.vercel.app/api/listing/get?type=sale&limit=4');
 
         const [offerDataRes, rentDataRes, saleDataRes] = await Promise.all([
           offerRes,

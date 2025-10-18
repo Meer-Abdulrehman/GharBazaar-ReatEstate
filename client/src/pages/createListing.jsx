@@ -60,7 +60,7 @@ export default function CreateListing() {
     const formData = new FormData();
     formData.append("image", file);
 
-    const res = await fetch("http://localhost:3000/api/upload", {
+    const res = await fetch("https://reat-estate-backend.vercel.app/api/upload", {
       method: "POST",
       body: formData,
       credentials: "include", // 👈 include cookies for auth if required
@@ -104,7 +104,7 @@ export default function CreateListing() {
 
       setLoading(true);
       setError("");
-const res = await fetch('http://localhost:3000/api/listing/create', {
+const res = await fetch('https://reat-estate-backend.vercel.app/api/listing/create', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   credentials: 'include', // ✅ Add this line
