@@ -33,10 +33,14 @@ const app = express();
 
 // ✅ Enable CORS for frontend
 app.use(cors({
-  origin: "https://real-estate-app-gilt.vercel.app",
+  origin: [
+    "https://real-estate-app-gilt.vercel.app",  // deployed frontend
+    "http://localhost:5173"                     // local frontend (vite)
+  ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE"],
 }));
+
 
 // ✅ Parse incoming JSON requests
 app.use(express.json());
