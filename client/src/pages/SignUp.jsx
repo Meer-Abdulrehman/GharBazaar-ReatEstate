@@ -1,68 +1,96 @@
-import { GoogleAuthProvider, getAuth, signInWithPopup } from "firebase/auth";
-import { useNavigate } from "react-router-dom";
-import { app } from "../firebase";
-import { FcGoogle } from "react-icons/fc";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import OAuth from "../components/OAuth";
 
-export default function OAuth() {
+export default function SignUp() {
+  const [formData, setFormData] = useState({});
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleGoogleClick = async () => {
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.id]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     try {
-      const provider = new GoogleAuthProvider();
-      const auth = getAuth(app);
-
-      // Sign in with Google popup
-      const result = await signInWithPopup(auth, provider);
-
-      // Get user info
-      const userData = {
-        name: result.user.displayName,
-        email: result.user.email,
-        photo: result.user.photoURL,
-      };
-
-      // ✅ Automatically detect environment (local or deployed)
-      const API_BASE_URL =
-        import.meta.env.MODE === "development"
-          ? "http://localhost:3000"
-          : "https://reat-estate-backend.vercel.app";
-
-      // Send user data to backend
-      const res = await fetch(`${API_BASE_URL}/api/auth/google`, {
+      setLoading(true);
+      setError(null);
+      const res = await fetch("https://reat-estate-backend.vercel.app/api/auth/signup", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(userData),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
       });
 
-      // Parse response safely
-      if (!res.ok) {
-        console.error("Google auth failed with status:", res.status);
-        throw new Error(`Request failed: ${res.status}`);
-      }
-
       const data = await res.json();
+      setLoading(false);
 
       if (data.success === false) {
-        console.error("Google login backend error:", data.message);
+        setError(data.message);
         return;
       }
 
-      // Redirect to homepage
-      navigate("/");
+      navigate("/sign-in");
     } catch (error) {
-      console.error("Google sign-in error:", error);
-      alert("Could not sign in with Google. Please try again.");
+      setLoading(false);
+      setError(error.message);
     }
   };
 
   return (
-    <button
-      type="button"
-      onClick={handleGoogleClick}
-      className="bg-red-600 text-white p-3 rounded-lg uppercase hover:opacity-95 flex items-center justify-center gap-2"
-    >
-      <FcGoogle className="text-2xl bg-white rounded-full" />
-      Continue with Google
-    </button>
+    <div className="p-3 max-w-lg mx-auto">
+      <h1 className="text-3xl text-center font-semibold my-7">Sign Up</h1>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <input
+          type="text"
+          placeholder="Username"
+          className="border p-3 rounded-lg"
+          id="username"
+          onChange={handleChange}
+        />
+        <input
+          type="email"
+          placeholder="Email"
+          className="border p-3 rounded-lg"
+          id="email"
+          onChange={handleChange}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          className="border p-3 rounded-lg"
+          id="password"
+          onChange={handleChange}
+        />
+        <button
+          disabled={loading}
+          className="bg-slate-700 text-white p-3 rounded-lg uppercase hover:opacity-95 disabled:opacity-80"
+        >
+          {loading ? "Loading..." : "Sign Up"}
+        </button>
+      </form>
+
+      <div className="flex items-center gap-2 my-4">
+        <hr className="flex-1 border-gray-300" />
+        <span className="text-gray-500">OR</span>
+        <hr className="flex-1 border-gray-300" />
+      </div>
+
+      {/* 👇 Google OAuth Button */}
+      <OAuth />
+
+      <div className="flex gap-2 mt-5">
+        <p>Have an account?</p>
+        <Link to="/sign-in">
+          <span className="text-blue-500">Sign In</span>
+        </Link>
+      </div>
+
+      {error && <p className="text-red-700 mt-5">{error}</p>}
+    </div>
   );
 }
