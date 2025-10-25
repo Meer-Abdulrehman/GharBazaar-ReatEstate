@@ -67,15 +67,15 @@ export default function Profile() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!currentUser || !currentUser.id) {
-  console.error("Cannot update user: missing ID");
-  return;
-}
+    if (!currentUser || !currentUser._id) {
+      console.error("Cannot update user: missing ID");
+      return;
+    }
 
     try {
       dispatch(updateUserStart());
       const res = await fetch(
-        `https://reat-estate-backend.vercel.app/api/user/update/${currentUser.id}`,
+        `https://reat-estate-backend.vercel.app/api/user/update/${currentUser._id}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -103,7 +103,7 @@ export default function Profile() {
     try {
       dispatch(deleteUserStart());
       const res = await fetch(
-        `https://reat-estate-backend.vercel.app/api/user/delete/${currentUser.id}`,
+        `https://reat-estate-backend.vercel.app/api/user/delete/${currentUser._id}`,
         { method: "DELETE", credentials: "include" }
       );
       const data = await res.json();
@@ -134,11 +134,11 @@ export default function Profile() {
   };
 
   const handleShowListings = async () => {
-    if (!currentUser || !currentUser.id) return;
+    if (!currentUser || !currentUser._id) return;
     try {
       setShowListingsError(false);
       const res = await fetch(
-        `https://reat-estate-backend.vercel.app/api/user/listings/${currentUser.id}`,
+        `https://reat-estate-backend.vercel.app/api/user/listings/${currentUser._id}`,
         { credentials: "include" }
       );
       const data = await res.json();
