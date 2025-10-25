@@ -15,18 +15,15 @@ export default function OAuth() {
 
       const result = await signInWithPopup(auth, provider);
 
-      // Send correct field names to backend
       const res = await fetch('https://reat-estate-backend.vercel.app/api/auth/google', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // ✅ store JWT cookie
         body: JSON.stringify({
-          name: result.user.displayName,  // required by backend
+          name: result.user.displayName,
           email: result.user.email,
-          avatar: result.user.photoURL,   // match backend 'avatar' field
+          avatar: result.user.photoURL, // ✅ match backend
         }),
-        credentials: 'include',           // ensures cookies (JWT) are sent
       });
 
       const data = await res.json();
@@ -36,7 +33,7 @@ export default function OAuth() {
         return;
       }
 
-      dispatch(signInSuccess(data));
+      dispatch(signInSuccess(data.user));
       navigate('/');
     } catch (error) {
       console.error('Could not sign in with Google:', error);

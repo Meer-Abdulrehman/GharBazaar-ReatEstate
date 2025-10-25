@@ -31,18 +31,18 @@ export default function SignUp() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include', // ✅ ensures JWT cookie is stored
         body: JSON.stringify(formData),
       });
 
       const data = await res.json();
-      console.log(data);
 
-      if (data.success === false) {
+      if (!res.ok || data.success === false) {
         dispatch(signInFailure(data.message));
         return;
       }
 
-      dispatch(signInSuccess(data));
+      dispatch(signInSuccess(data.user)); // ✅ send user data to Redux
       navigate('/sign-in');
     } catch (err) {
       dispatch(signInFailure(err.message));
@@ -57,7 +57,7 @@ export default function SignUp() {
           type='text'
           placeholder='Name'
           className='border p-3 rounded-lg'
-          id='name'   // ✅ changed from 'username' to 'name'
+          id='name' // ✅ corrected from 'username'
           onChange={handleChange}
         />
         <input
