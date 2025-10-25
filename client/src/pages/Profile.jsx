@@ -1,4 +1,4 @@
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { useRef, useState, useEffect } from 'react';
 import {
   updateUserStart,
@@ -9,7 +9,6 @@ import {
   deleteUserSuccess,
   signOutUserStart,
 } from '../redux/user/userSlice';
-import { useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
 
 export default function Profile() {
@@ -24,17 +23,13 @@ export default function Profile() {
   const [userListings, setUserListings] = useState([]);
   const dispatch = useDispatch();
 
-  // 👇 Cloudinary credentials
   const CLOUD_NAME = "dwbilsvu0";
   const UPLOAD_PRESET = "estate_app";
 
   useEffect(() => {
-    if (file) {
-      handleFileUpload(file);
-    }
+    if (file) handleFileUpload(file);
   }, [file]);
 
-  // ✅ Cloudinary image upload function
   const handleFileUpload = async (file) => {
     setFileUploadError(false);
     setFilePerc(0);
@@ -53,13 +48,13 @@ export default function Profile() {
       const result = await res.json();
 
       if (result.secure_url) {
-        setFormData({ ...formData, avatar: result.secure_url });
+        setFormData((prev) => ({ ...prev, avatar: result.secure_url }));
         setFilePerc(100);
       } else {
         setFileUploadError(true);
       }
-    } catch (error) {
-      console.error("Cloudinary upload error:", error);
+    } catch (err) {
+      console.error("Cloudinary upload error:", err);
       setFileUploadError(true);
     }
   };
@@ -70,118 +65,137 @@ export default function Profile() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!currentUser || !currentUser._id) {
+      console.error("User ID is missing!");
+      return;
+    }
+
     try {
       dispatch(updateUserStart());
-      const res = await fetch(`https://reat-estate-backend.vercel.app/api/user/update/${currentUser._id}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      const res = await fetch(
+        `https://reat-estate-backend.vercel.app/api/user/update/${currentUser._id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(formData),
+        }
+      );
+
       const data = await res.json();
-      if (data.success === false) {
+
+      if (!data.success) {
         dispatch(updateUserFailure(data.message));
         return;
       }
 
       dispatch(updateUserSuccess(data));
       setUpdateSuccess(true);
-    } catch (error) {
-      dispatch(updateUserFailure(error.message));
+    } catch (err) {
+      dispatch(updateUserFailure(err.message));
     }
   };
 
   const handleDeleteUser = async () => {
+    if (!currentUser || !currentUser._id) return;
+
     try {
       dispatch(deleteUserStart());
       const res = await fetch(`https://reat-estate-backend.vercel.app/api/user/delete/${currentUser._id}`, {
         method: 'DELETE',
+        credentials: 'include',
       });
       const data = await res.json();
-      if (data.success === false) {
+      if (!data.success) {
         dispatch(deleteUserFailure(data.message));
         return;
       }
       dispatch(deleteUserSuccess(data));
-    } catch (error) {
-      dispatch(deleteUserFailure(error.message));
+    } catch (err) {
+      dispatch(deleteUserFailure(err.message));
     }
   };
 
   const handleSignOut = async () => {
     try {
       dispatch(signOutUserStart());
-      const res = await fetch('https://reat-estate-backend.vercel.app/api/auth/signout');
+      const res = await fetch('https://reat-estate-backend.vercel.app/api/auth/signout', {
+        credentials: 'include',
+      });
       const data = await res.json();
-      if (data.success === false) {
+      if (!data.success) {
         dispatch(deleteUserFailure(data.message));
         return;
       }
       dispatch(deleteUserSuccess(data));
-    } catch (error) {
-      dispatch(deleteUserFailure(data.message));
+    } catch (err) {
+      dispatch(deleteUserFailure(err.message));
     }
   };
 
   const handleShowListings = async () => {
+    if (!currentUser || !currentUser._id) return;
+
     try {
       setShowListingsError(false);
-      const res = await fetch(`https://reat-estate-backend.vercel.app/api/user/listings/${currentUser._id}`);
+      const res = await fetch(`https://reat-estate-backend.vercel.app/api/user/listings/${currentUser._id}`, {
+        credentials: 'include',
+      });
       const data = await res.json();
-      if (data.success === false) {
+      if (!data.success) {
         setShowListingsError(true);
         return;
       }
       setUserListings(data);
-    } catch (error) {
+    } catch (err) {
       setShowListingsError(true);
     }
   };
 
   const handleListingDelete = async (listingId) => {
+    if (!currentUser || !currentUser._id) return;
+
     try {
-   const res = await fetch(`https://reat-estate-backend.vercel.app/api/user/delete/${currentUser._id}`, {
-  method: 'DELETE',
-  credentials: 'include',
-});
+      const res = await fetch(`https://reat-estate-backend.vercel.app/api/listing/${listingId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
 
       const data = await res.json();
-      if (data.success === false) {
-        console.log(data.message);
-        return;
-      }
-      setUserListings((prev) =>
-        prev.filter((listing) => listing._id !== listingId)
-      );
-    } catch (error) {
-      console.log(error.message);
+      if (!data.success) return;
+
+      setUserListings((prev) => prev.filter((listing) => listing._id !== listingId));
+    } catch (err) {
+      console.log(err.message);
     }
   };
+
+  if (!currentUser) return <p className="text-center mt-5">Loading user data...</p>;
 
   return (
     <div className='p-3 max-w-lg mx-auto'>
       <h1 className='text-3xl font-semibold text-center my-7'>Profile</h1>
       <form onSubmit={handleSubmit} className='flex flex-col gap-4'>
         <input
-          onChange={(e) => setFile(e.target.files[0])}
           type='file'
           ref={fileRef}
           hidden
           accept='image/*'
+          onChange={(e) => setFile(e.target.files[0])}
         />
         <img
-          onClick={() => fileRef.current.click()}
           src={formData.avatar || currentUser.avatar}
           alt='profile'
           className='rounded-full h-24 w-24 object-cover cursor-pointer self-center mt-2'
+          onClick={() => fileRef.current.click()}
         />
 
         <p className='text-sm self-center'>
           {fileUploadError ? (
             <span className='text-red-700'>Error uploading image</span>
           ) : filePerc > 0 && filePerc < 100 ? (
-            <span className='text-slate-700'>{`Uploading...`}</span>
+            <span className='text-slate-700'>Uploading...</span>
           ) : filePerc === 100 ? (
             <span className='text-green-700'>Image successfully uploaded!</span>
           ) : (
@@ -191,26 +205,26 @@ export default function Profile() {
 
         <input
           type='text'
+          id='username'
           placeholder='username'
           defaultValue={currentUser.username}
-          id='username'
           className='border p-3 rounded-lg'
           onChange={handleChange}
         />
         <input
           type='email'
-          placeholder='email'
           id='email'
+          placeholder='email'
           defaultValue={currentUser.email}
           className='border p-3 rounded-lg'
           onChange={handleChange}
         />
         <input
           type='password'
-          placeholder='password'
-          onChange={handleChange}
           id='password'
+          placeholder='password'
           className='border p-3 rounded-lg'
+          onChange={handleChange}
         />
         <button
           disabled={loading}
@@ -227,10 +241,7 @@ export default function Profile() {
       </form>
 
       <div className='flex justify-between mt-5'>
-        <span
-          onClick={handleDeleteUser}
-          className='text-red-700 cursor-pointer'
-        >
+        <span onClick={handleDeleteUser} className='text-red-700 cursor-pointer'>
           Delete account
         </span>
         <span onClick={handleSignOut} className='text-red-700 cursor-pointer'>
@@ -238,10 +249,8 @@ export default function Profile() {
         </span>
       </div>
 
-      <p className='text-red-700 mt-5'>{error ? error : ''}</p>
-      <p className='text-green-700 mt-5'>
-        {updateSuccess ? 'User is updated successfully!' : ''}
-      </p>
+      <p className='text-red-700 mt-5'>{error}</p>
+      <p className='text-green-700 mt-5'>{updateSuccess ? 'User is updated successfully!' : ''}</p>
 
       <button
         onClick={handleShowListings}
@@ -250,38 +259,21 @@ export default function Profile() {
         Show Listings
       </button>
 
-      <p className='text-red-700 mt-5'>
-        {showListingsError ? 'Error showing listings' : ''}
-      </p>
+      <p className='text-red-700 mt-5'>{showListingsError ? 'Error showing listings' : ''}</p>
 
-      {userListings && userListings.length > 0 && (
+      {userListings.length > 0 && (
         <div className='flex flex-col gap-4'>
-          <h1 className='text-center mt-7 text-2xl font-semibold'>
-            Your Listings
-          </h1>
+          <h1 className='text-center mt-7 text-2xl font-semibold'>Your Listings</h1>
           {userListings.map((listing) => (
-            <div
-              key={listing._id}
-              className='border rounded-lg p-3 flex justify-between items-center gap-4'
-            >
+            <div key={listing._id} className='border rounded-lg p-3 flex justify-between items-center gap-4'>
               <Link to={`/listing/${listing._id}`}>
-                <img
-                  src={listing.imageUrls[0]}
-                  alt='listing cover'
-                  className='h-16 w-16 object-contain'
-                />
+                <img src={listing.imageUrls[0]} alt='listing cover' className='h-16 w-16 object-contain' />
               </Link>
-              <Link
-                className='text-slate-700 font-semibold  hover:underline truncate flex-1'
-                to={`/listing/${listing._id}`}
-              >
+              <Link className='text-slate-700 font-semibold hover:underline truncate flex-1' to={`/listing/${listing._id}`}>
                 <p>{listing.name}</p>
               </Link>
-              <div className='flex flex-col item-center'>
-                <button
-                  onClick={() => handleListingDelete(listing._id)}
-                  className='text-red-700 uppercase'
-                >
+              <div className='flex flex-col items-center'>
+                <button onClick={() => handleListingDelete(listing._id)} className='text-red-700 uppercase'>
                   Delete
                 </button>
                 <Link to={`/update-listing/${listing._id}`}>
