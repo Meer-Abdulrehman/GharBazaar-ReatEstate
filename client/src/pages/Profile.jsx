@@ -141,9 +141,11 @@ export default function Profile() {
 
   const handleListingDelete = async (listingId) => {
     try {
-      const res = await fetch(`https://reat-estate-backend.vercel.app/api/listing/delete/${listingId}`, {
-        method: 'DELETE',
-      });
+   const res = await fetch(`https://reat-estate-backend.vercel.app/api/user/delete/${currentUser._id}`, {
+  method: 'DELETE',
+  credentials: 'include',
+});
+
       const data = await res.json();
       if (data.success === false) {
         console.log(data.message);
