@@ -134,7 +134,7 @@ export default function Profile() {
   };
 
   const handleShowListings = async () => {
-    if (!currentUser || !currentUser._id) return;
+    if (!currentUser || !currentUser.id) return;
     try {
       setShowListingsError(false);
       const res = await fetch(
