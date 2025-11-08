@@ -31,14 +31,19 @@ const app = express();
 // 🌐 Middleware Configuration
 // ===============================
 
-// ✅ Enable CORS for frontend
-import cors from "cors";
+// ✅ Universal CORS Fix for Vercel
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "https://real-estate-app-gilt.vercel.app");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.header("Access-Control-Allow-Credentials", "true");
 
-app.use(cors({
-  origin: "https://real-estate-app-gilt.vercel.app", // frontend URL
-  credentials: true
-}));
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
 
+  next();
+});
 
 // ✅ Parse incoming JSON requests
 app.use(express.json());
@@ -58,16 +63,16 @@ ConnectDb();
 // 🧭 API Routes
 // ===============================
 
-// Test route
+// ✅ Test route
 app.get("/", (req, res) => {
   res.json({
-    message: "MERN Real Estate API is running!",
+    message: "MERN Real Estate API is running successfully 🚀",
     status: "success",
     timestamp: new Date().toISOString(),
   });
 });
 
-// Main API routes
+// ✅ Main API routes
 app.use('/api/user', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/listing', listingRouter);
@@ -88,9 +93,9 @@ app.use((err, req, res, next) => {
 });
 
 // ===============================
-// 🚀 Start Server
+// 🚀 Start Server (Local Only)
 // ===============================
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
-  console.log(`✅ Server is running on port ${port}`);
+  console.log(`✅ Server running on port ${port}`);
 });
