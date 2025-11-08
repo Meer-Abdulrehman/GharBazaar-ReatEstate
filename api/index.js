@@ -6,7 +6,6 @@ import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
-import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -28,30 +27,33 @@ dotenv.config();
 const app = express();
 
 // ===============================
-// 🌐 Middleware Configuration
+// 🌐 CORS Configuration (Fixed for localhost + production)
 // ===============================
+const allowedOrigins = [
+  'https://real-estate-app-gilt.vercel.app', // Production frontend
+  'http://localhost:5173',                   // Local development
+];
 
-// ✅ Universal CORS Fix for Vercel
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "https://real-estate-app-gilt.vercel.app");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  res.header("Access-Control-Allow-Credentials", "true");
-
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
   }
+
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.header('Access-Control-Allow-Credentials', 'true'); // for cookies/JWT
+
+  if (req.method === 'OPTIONS') return res.sendStatus(200); // preflight requests
 
   next();
 });
 
-// ✅ Parse incoming JSON requests
+// ===============================
+// 🧩 Middleware
+// ===============================
 app.use(express.json());
-
-// ✅ Parse cookies
 app.use(cookieParser());
-
-// ✅ Serve static uploaded files
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // ===============================
@@ -63,16 +65,16 @@ ConnectDb();
 // 🧭 API Routes
 // ===============================
 
-// ✅ Test route
-app.get("/", (req, res) => {
+// Test route
+app.get('/', (req, res) => {
   res.json({
-    message: "MERN Real Estate API is running successfully 🚀",
-    status: "success",
+    message: 'MERN Real Estate API is running successfully 🚀',
+    status: 'success',
     timestamp: new Date().toISOString(),
   });
 });
 
-// ✅ Main API routes
+// Main API routes
 app.use('/api/user', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/listing', listingRouter);
@@ -84,7 +86,6 @@ app.use('/api/upload', uploadRoutes);
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Something went wrong!';
-  
   res.status(statusCode).json({
     success: false,
     statusCode,
@@ -93,7 +94,7 @@ app.use((err, req, res, next) => {
 });
 
 // ===============================
-// 🚀 Start Server (Local Only)
+// 🚀 Start Server
 // ===============================
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
